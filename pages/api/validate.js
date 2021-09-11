@@ -9,15 +9,17 @@ export default function handler(req, res) {
   const repoUrl = req.query.repoUrl
   const chartName = req.query.chart
 
+  const chartFQN = req.query.repoName + "/" + req.query.chart
+
   exec("helm repo add " + repoName + " " + repoUrl, (error, stdout, stderr) => {
     if (error || stderr)
       res.status(500).json({ repo: repoUrl, error: error + "\n" + stderr })
     else {
-      exec("helm template -g " + repoName + "/" + chartName, (error, stdout, stderr) => {
+      exec("helm template -g " + chartFQN, (error, stdout, stderr) => {
         if (error || stderr)
-          res.status(500).json({ repo: repoUrl, chart: chartName, error: error + "\n" + stderr })
+          res.status(500).json({ chart: chartFQN, error: error + "\n" + stderr })
         else {
-          res.status(200).json({ repo: repoUrl, chart: chartName, chartSample: stdout })
+          res.status(200).json({ chart: chartFQN })
         }
       })
     }

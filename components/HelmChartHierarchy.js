@@ -15,7 +15,8 @@ class HelmChartHierarchy extends React.Component {
     }
 
     showDetails(content) {
-        alert(content)
+        // TODO enhance with proper html box
+        alert(JSON.stringify(content).replace(/\n/g, "<br>").replace(/[ ]/g, "&nbsp;"))
     }
 
     render() {
@@ -23,17 +24,19 @@ class HelmChartHierarchy extends React.Component {
             return (<div>nothing to display.</div>);
 
         const root = hierarchy({
-            name: this.chartDetails.chartDescription.name + "@" + this.chartDetails.chartDescription.appVersion,
+            name: this.chartDetails.chartDescription.name + " " + this.chartDetails.chartDescription.appVersion,
             children: [
                 {
                     name: '', // templates
                     // empty first template to display chart-name
                     children: [{ name: '', size: 400 }].concat(this.chartDetails.templates.map(t => {
-                        const name = t.match(/(?<=kind: )[^$\s]+/)
+                        const name = t.match(/(?<=name: )[^$\s]+/)
+                        const kind = t.match(/(?<=kind: )[^$\s]+/)
 
                         return ({
-                            name: name,
-                            kind: 'template',
+                            name: typeof (name) == 'string' ? name.substring(0, 20) : name,
+                            kind: kind,
+                            type: 'template',
                             content: t,
                             size: 600
                         })
@@ -42,10 +45,10 @@ class HelmChartHierarchy extends React.Component {
                 {
                     name: '', // values
                     children: Object.entries(this.chartDetails.values).map(([k, v]) => ({
-                        name: k,
-                        kind: 'value',
-                        value: v.toString(),
-                        content: JSON.stringify(v),
+                        name: k.substring(0, 20),
+                        type: 'value',
+                        value: v != null ? v.toString() : '',
+                        content: [k, v],
                         size: 400
                     }))
                 }
@@ -61,6 +64,9 @@ class HelmChartHierarchy extends React.Component {
         const yMax = height - margin.top - margin.bottom;
 
         return (<div>
+            <Collapsible trigger="README (click to expand)">
+                <MarkdownRenderer markdown={this.chartDetails.readme} />
+            </Collapsible>
             <svg width={width} height={height} overflow-wrap="anywhere">
                 <Treemap
                     root={data}
@@ -76,12 +82,18 @@ class HelmChartHierarchy extends React.Component {
 
                                     let nodeStroke = '#000000'
 
-                                    if (node.data.kind == 'template') {
-                                        nodeStroke = '#AA0000'
-                                    } else if (node.data.kind == 'value') {
-                                        nodeStroke = '#00AA00'
-                                    } else if (node.depth > 2) {
-                                        nodeStroke = '#0000AA'
+                                    switch (node.data.type) {
+                                        case 'template':
+                                            nodeStroke = '#AA0000'
+                                            break
+                                        case 'value':
+                                            nodeStroke = '#00AA00'
+                                            break
+                                        default:
+                                            if (node.depth > 2) {
+                                                nodeStroke = '#0000AA'
+                                                break
+                                            }
                                     }
 
                                     return (
@@ -89,7 +101,7 @@ class HelmChartHierarchy extends React.Component {
                                             key={`node-${i}`}
                                             top={node.y0 + margin.top}
                                             left={node.x0 + margin.left}
-                                            className={node.data.kind}
+                                            className={node.data.type}
                                             onClick={() => this.showDetails(node.data.content)}
                                         >
                                             <rect
@@ -100,7 +112,8 @@ class HelmChartHierarchy extends React.Component {
                                                 fill={node.depth == 0 ? '#FFFFFF' : "transparent"}
                                             />
                                             <text>
-                                                <tspan x="5" dy="1.1em">{node.data.name}</tspan>
+                                                <tspan x="5" dy="1.1em" fontSize="x-small">{node.data.name}</tspan>
+                                                <tspan x="5" dy="1.1em" fontSize="xx-small" fontStyle="italic">{node.data.kind}</tspan>
                                             </text>
                                         </Group>
                                     )
@@ -109,10 +122,6 @@ class HelmChartHierarchy extends React.Component {
                     }
                 </Treemap>
             </svg>
-
-            <Collapsible trigger="README">
-                <MarkdownRenderer markdown={this.chartDetails.readme} />
-            </Collapsible>
         </div>)
     }
 }

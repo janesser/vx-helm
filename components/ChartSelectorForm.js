@@ -77,6 +77,7 @@ class ChartSelectorForm extends React.Component {
                         />
                     </p>
                     <p>
+                        {/* TODO provide dropdown here */}
                         <label htmlFor="helm-chart">helm-chart: </label>
                         <input id="helm-chart"
                             type="text"
