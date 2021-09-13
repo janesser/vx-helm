@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { Children, setState } from 'react';
+import Autocomplete from 'react-autocomplete';
 import HelmChartHierarchy from './HelmChartHierarchy'
 
 class ChartSelectorForm extends React.Component {
@@ -8,8 +9,10 @@ class ChartSelectorForm extends React.Component {
 
         this.state = {
             repo: { name: null, url: null },
-            chart: null,
-            chartDetails: null
+            chartsAvailable: [],
+            chart: '',
+            chartDetails: null,
+            error: null
         }
     }
 
@@ -18,9 +21,24 @@ class ChartSelectorForm extends React.Component {
         document.getElementById("visualize").disabled = !validForm
 
         if (validForm)
-            fetch("/api/validate?repoName=" + this.state.repo.name + "&repoUrl=" + this.state.repo.url + "&chart=" + this.state.chart)
-                .then((response) => console.log(response))
+            fetch("/api/browse?repoName=" + this.state.repo.name + "&repoUrl=" + this.state.repo.url)
+                .then(
+                    (response) =>
+                        response.json().then(
+                            (responseJson) => {
+                                console.log(responseJson)
+                                if (response.status == 200)
+                                    this.setState({
+                                        chartsAvailable: responseJson.charts
+                                    })
+                                else
+                                    alert(responseJson.error)
+
+                            }
+                        )
+                )
     }
+
 
     visualize = (event) => {
         event.preventDefault();
@@ -51,7 +69,7 @@ class ChartSelectorForm extends React.Component {
         return (
             <div>
                 <form onSubmit={this.visualize} >
-                    <p>
+                    <div>
                         <label htmlFor="helm-repo-name">helm-repo-name: </label>
                         <input id="helm-repo-name"
                             type="text"
@@ -62,8 +80,8 @@ class ChartSelectorForm extends React.Component {
                             })}
                             required
                         />
-                    </p>
-                    <p>
+                    </div>
+                    <div>
                         <label htmlFor="helm-repo-url">helm-repo-url: </label>
                         <input id="helm-repo-url"
                             type="url"
@@ -75,27 +93,36 @@ class ChartSelectorForm extends React.Component {
                             })}
                             required
                         />
-                    </p>
-                    <p>
-                        {/* TODO provide dropdown here */}
+                    </div>
+                    <div>
+                        <button id="validate"
+                            type="button"
+                            onClick={this.validate}>Validate</button>
+                    </div>
+                    <div>
                         <label htmlFor="helm-chart">helm-chart: </label>
-                        <input id="helm-chart"
-                            type="text"
-                            spellCheck="false"
-                            onChange={e => this.setState(state => {
-                                state.chart = e.target.value
-                                state
-                            })}
+                        <Autocomplete
+                            id="helm-chart"
+                            getItemValue={(item) => item.name.split('/')[1]}
+                            items={this.state.chartsAvailable}
+                            value={this.state.chart}
+                            onSelect={(item) => this.setState({ chart: item })}
+                            renderItem={(item, isHighlighted) =>
+                                <div
+                                    key={item.name}
+                                    style={{ background: isHighlighted ? 'lightgray' : 'white' }}>
+                                    {item.name.split('/')[1] + " " + item.version}
+                                </div>
+                            }
+
                             required
                         />
-                    </p>
-                    <p><button id="validate"
-                        type="button"
-                        onClick={this.validate}>Validate</button>
+                    </div>
+                    <div>
                         <button id="visualize"
                             type="submit"
                             disabled>Visualize!</button>
-                    </p>
+                    </div>
                 </form>
                 {visualizer}
             </div>

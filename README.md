@@ -23,6 +23,6 @@ Browse the details. Click on README to expand and collapse. Click on respective 
 PRs are welcome anytime.
 
 Enhancements i already figured out (but didn't manage to tackle yet):
-- facilitate chart selection once repo is known
+- ~~facilitate chart selection once repo is known~~
 - nicer details display
 - nicer CSS

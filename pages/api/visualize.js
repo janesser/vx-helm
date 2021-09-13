@@ -1,8 +1,6 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 
 import { exec } from "child_process"
-const fs = require("fs")
-const path = require("path")
 const yaml = require("js-yaml")
 
 export default async function handler(req, res) {
